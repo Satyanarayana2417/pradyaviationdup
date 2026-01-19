@@ -39,7 +39,7 @@ const Home = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Track mobile breakpoint so we can avoid rendering large/heavy sections on small screens
+  // Force desktop view on all devices - mobile shows exact desktop version
   const [isMobile, setIsMobile] = useState(false);
   
   // Scroll-controlled feature cards state
@@ -232,42 +232,52 @@ const Home = () => {
     // Objectives section animation
     if (objectivesRef.current) {
       const timelineItems = objectivesRef.current.querySelectorAll('.timeline-item');
+      const timelineLine = document.querySelector('.timeline-line');
       
-      gsap.fromTo('.timeline-line', {
-        scaleY: 0,
-      }, {
-        scaleY: 1,
-        duration: 1.5,
-        ease: 'power2.out',
-        transformOrigin: 'top',
-        scrollTrigger: {
-          trigger: objectivesRef.current,
-          start: 'top 80%',
-          end: 'bottom 20%',
-        }
-      });
-
-      timelineItems.forEach((item, index) => {
-        gsap.fromTo(item.querySelector('.timeline-dot'), {
-          scale: 0,
+      // Only animate timeline line if it exists
+      if (timelineLine) {
+        gsap.fromTo('.timeline-line', {
+          scaleY: 0,
         }, {
-          scale: 1,
-          duration: 0.6,
-          ease: 'back.out(1.7)',
+          scaleY: 1,
+          duration: 1.5,
+          ease: 'power2.out',
+          transformOrigin: 'top',
           scrollTrigger: {
-            trigger: item,
-            start: 'top 85%',
-            toggleActions: 'play none none none'
+            trigger: objectivesRef.current,
+            start: 'top 80%',
+            end: 'bottom 20%',
           }
         });
+      }
 
-        // Mobile animation
-        const mobileContent = item.querySelector('.block.md\\:hidden .timeline-content');
-        if (mobileContent) {
-          gsap.fromTo(mobileContent, {
-            x: 30,
-            opacity: 0,
-          }, {
+      // Only animate timeline items if they exist
+      if (timelineItems.length > 0) {
+        timelineItems.forEach((item, index) => {
+          const timelineDot = item.querySelector('.timeline-dot');
+          
+          if (timelineDot) {
+            gsap.fromTo(timelineDot, {
+              scale: 0,
+            }, {
+              scale: 1,
+              duration: 0.6,
+              ease: 'back.out(1.7)',
+              scrollTrigger: {
+                trigger: item,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+              }
+            });
+          }
+
+          // Mobile animation
+          const mobileContent = item.querySelector('.block.md\\:hidden .timeline-content');
+          if (mobileContent) {
+            gsap.fromTo(mobileContent, {
+              x: 30,
+              opacity: 0,
+            }, {
             x: 0,
             opacity: 1,
             duration: 0.8,
@@ -300,7 +310,8 @@ const Home = () => {
             }
           });
         }
-      });
+        });
+      }
     }
 
     // Contact header animation
@@ -328,19 +339,26 @@ const Home = () => {
     }
 
     // Contact form animation
-    ScrollTrigger.create({
-      trigger: contactFormRef.current,
-      start: 'top 70%',
-      onEnter: () => {
-        gsap.from('.contact-item', {
-          opacity: 0,
-          y: 40,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: 'power2.out'
+    if (contactFormRef.current) {
+      const contactItems = document.querySelectorAll('.contact-item');
+      
+      // Only animate contact items if they exist
+      if (contactItems.length > 0) {
+        ScrollTrigger.create({
+          trigger: contactFormRef.current,
+          start: 'top 70%',
+          onEnter: () => {
+            gsap.from('.contact-item', {
+              opacity: 0,
+              y: 40,
+              duration: 0.8,
+              stagger: 0.2,
+              ease: 'power2.out'
+            });
+          }
         });
       }
-    });
+    }
 
     return () => {
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
@@ -369,8 +387,13 @@ const Home = () => {
     }, 1000);
   };
 
+  // Disabled mobile detection - force desktop view everywhere
   // Update isMobile when viewport changes
   useEffect(() => {
+    // Always keep isMobile as false to force desktop layout
+    setIsMobile(false);
+    // Original mobile detection code disabled
+    /*
     if (typeof window === 'undefined') return;
     const mq = window.matchMedia('(max-width: 639px)');
     const onChange = (ev: MediaQueryListEvent | MediaQueryList) => setIsMobile(ev.matches);
@@ -383,6 +406,7 @@ const Home = () => {
       if (mq.removeEventListener) mq.removeEventListener('change', onChange as any);
       else mq.removeListener(onChange as any);
     };
+    */
   }, []);
 
   // Loading animation removed per request; page now renders immediately
@@ -393,129 +417,6 @@ const Home = () => {
         @keyframes heroContentIn {
           0% { opacity: 0; transform: translateY(-30px); }
           100% { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 768px) {
-          .mobile-portrait-video {
-            transform: rotate(0deg) !important;
-            object-fit: cover !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            min-width: 100vw !important;
-            min-height: 100vh !important;
-          }
-
-          .mobile-portrait-section {
-            width: 100vw !important;
-            height: 100vh !important;
-            overflow: hidden !important;
-          }
-
-          /* Slight left shift for hero background video on mobile */
-          .hero-video-shift {
-            object-position: 42% center !important; /* move focal point a bit left ( < 50% ) */
-          }
-        }
-
-        /* Mobile-specific adjustments for the ABOUT section to expand the background upward
-           and move the text content upward for better positioning. */
-        @media (max-width: 639px) {
-          /* Pull the background image up on mobile so the wireframe sits higher
-             and removes the empty gap between the hero CTA and the image. */
-          #about {
-            background-position: 50% 4% !important; /* bring image focal point even higher */
-            background-size: 150% !important;
-            min-height: 100vh !important; /* reduce extra vertical space */
-            background-repeat: no-repeat !important;
-            padding-bottom: 0 !important; /* remove bottom padding */
-          }
-
-          /* Adjust header location to sit higher on mobile */
-          #about .about-header {
-            top: 35% !important; /* moved up from 48% to 35% */
-            left: 4% !important;
-            transform: translateY(-4%) !important;
-            max-width: calc(100% - 3rem) !important;
-            padding-right: 0.5rem !important;
-          }
-
-          /* Ensure CTAs are stacked, full width, and centered under the text on mobile */
-          #about .hero-cta-container {
-            margin-left: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 0.5rem !important;
-            width: 100% !important;
-            align-items: center !important;
-          }
-
-          #about .hero-cta-button {
-            width: 100% !important;
-            justify-content: center !important;
-            padding-top: 0.625rem !important;
-            padding-bottom: 0.625rem !important;
-          }
-
-          /* Reduce the size of the content section hero heading on mobile */
-          #content h2 {
-            font-size: clamp(1.2rem, 6.5vw, 1.6rem) !important;
-            line-height: 1.04 !important;
-          }
-
-          /* Improve text sizing/line-height for better readability on narrow screens */
-          #about h1 {
-            font-size: clamp(1.1rem, 6.2vw, 2.4rem) !important;
-            line-height: 1.05 !important;
-            text-align: left !important;
-          }
-
-          #about p {
-            font-size: clamp(0.72rem, 2.6vw, 0.98rem) !important;
-            line-height: 1.38 !important;
-            text-align: left !important;
-          }
-        }
-
-        /* Extra tuning for very small screens to avoid the wireframe being cropped at the very top */
-        @media (max-width: 480px) {
-          /* Very small screens: pull image up and position content higher */
-          #about {
-            background-position: 50% 6% !important; /* bring image focal point higher on very small screens */
-            background-size: 160% !important;
-            min-height: 110vh !important;
-          }
-
-          #about .about-header {
-            top: 40% !important; /* moved up from 52% to 40% */
-            left: 4% !important;
-            transform: translateY(-6%) !important;
-          }
-
-          #about h1 {
-            font-size: clamp(1.2rem, 7.2vw, 2.2rem) !important;
-          }
-        }
-
-        /* Mobile-specific adjustments for the What We Believe section */
-        @media (max-width: 639px) {
-          #beliefs {
-            padding-top: 0 !important; /* remove top padding completely */
-            padding-bottom: 1rem !important; /* reduce bottom padding */
-          }
-          
-          #beliefs .min-h-screen {
-            min-height: 80vh !important; /* reduce minimum height */
-            padding-top: 0 !important; /* remove inner top padding */
-            padding-bottom: 1rem !important;
-          }
-          
-          #beliefs .text-center {
-            margin-bottom: 3rem !important; /* reduce margin below title */
-          }
-          
-          #beliefs .believe-card {
-            margin-bottom: 1.5rem !important; /* add space between cards on mobile */
-          }
         }
 
         /* Apply the condensed display font to large headings */
@@ -1195,6 +1096,32 @@ const Home = () => {
         <div className="absolute top-0 left-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-0 w-80 h-80 bg-cyan-400/5 rounded-full blur-3xl"></div>
         
+        {/* Mobile-only Floating CTA Card - Positioned at top of contact section */}
+        <div className="md:hidden relative z-10 max-w-7xl mx-auto px-6 mb-10">
+          <div 
+            className="bg-white rounded-2xl shadow-2xl overflow-hidden cursor-pointer active:scale-95 transition-transform duration-200"
+            onClick={() => navigate('/air-taxi')}
+          >
+            <div className="px-6 py-5">
+              <p 
+                className="text-gray-500 uppercase tracking-wider text-xs font-medium mb-1"
+                style={{ letterSpacing: '0.15em' }}
+              >
+                Discover our solutions
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-900 font-semibold text-base">
+                  Learn more
+                </span>
+                <ArrowRight 
+                  size={18} 
+                  className="text-gray-400" 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
             {/* Left Side - Text Content */}
@@ -1251,7 +1178,7 @@ const Home = () => {
             </div>
 
             {/* Right Side - Contact Form */}
-            <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-2xl">
+            <div className="hidden md:block bg-white rounded-3xl p-8 lg:p-10 shadow-2xl">
               <h3 className="text-2xl font-semibold text-slate-900 mb-2">
                 Send us a message
               </h3>
@@ -1324,6 +1251,85 @@ const Home = () => {
                 </Button>
               </form>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile-Only Contact Form Section - Last section before footer */}
+      <section className="md:hidden relative bg-white py-12 px-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100">
+            <h3 className="text-2xl font-semibold text-slate-900 mb-2">
+              Send us a message
+            </h3>
+            <p className="text-slate-500 mb-8">
+              We'll get back to you within 24 hours.
+            </p>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="mobile-name" className="block text-sm font-medium text-slate-700 mb-2">
+                  Full Name
+                </label>
+                <Input
+                  id="mobile-name"
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500 focus:ring-cyan-500/20 h-12 rounded-xl"
+                  placeholder="Enter your name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="mobile-email" className="block text-sm font-medium text-slate-700 mb-2">
+                  Email Address
+                </label>
+                <Input
+                  id="mobile-email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500 focus:ring-cyan-500/20 h-12 rounded-xl"
+                  placeholder="email@example.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="mobile-message" className="block text-sm font-medium text-slate-700 mb-2">
+                  Your Message
+                </label>
+                <Textarea
+                  id="mobile-message"
+                  name="message"
+                  required
+                  rows={4}
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500 focus:ring-cyan-500/20 resize-none rounded-xl"
+                  placeholder="Tell us about your interest in AIRAVATH..."
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 text-white font-semibold py-3 px-8 rounded-xl hover:from-cyan-600 hover:to-cyan-700 transition-all duration-300 disabled:opacity-50 h-12 shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/30"
+              >
+                {isSubmitting ? (
+                  "Sending..."
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Send size={18} />
+                    Send Message
+                  </span>
+                )}
+              </Button>
+            </form>
           </div>
         </div>
       </section>
